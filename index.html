@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Elevator Prediction Calendar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Arial, sans-serif;
+      background: #f5f5f5;
+      color: #222;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 4px;
+      font-size: 1.8rem;
+    }
+
+    /* Instructions under the title */
+    .instructions {
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+      color: #555;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Small orange dot in instructions */
+    .instructions .legend-dot {
+      width: 14px;
+      height: 14px;
+      background: orange;
+      border-radius: 50%;
+    }
+
+    /* Main calendar grid */
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+    }
+
+    /* Month card */
+    .month {
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px 10px 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .month-header {
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    /* Weekday row */
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      font-size: 0.7rem;
+      text-align: center;
+      margin-bottom: 4px;
+      color: #777;
+    }
+
+    .weekday {
+      padding: 2px 0;
+    }
+
+    /* Days grid */
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      font-size: 0.8rem;
+    }
+
+    /* Individual day cell */
+    .day {
+      width: 30px;
+      height: 30px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    /* Empty placeholders before month starts */
+    .day.empty {
+      visibility: hidden;
+    }
+
+    /* Solid orange circle on selected dates */
+    .day.selected {
+      background: orange;
+      color: white;
+      font-weight: 700;
+    }
+
+    /* Footnote at bottom */
+    .footnote {
+      margin-top: 20px;
+      font-size: 0.75rem;
+      color: #777;
+      text-align: center;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>What day will the passenger elevator be completed?</h1>
+
+    <p class="instructions">
+      <span class="legend-dot"></span>
+      Dates that have been selected are marked with an orange circle.
+    </p>
+
+    <div id="calendar" class="calendar"></div>
+
+    <p class="footnote">
+      Note: "Completed" means approved and open for passenger use.
+      Cosmetic work may still be underway.
+      One guess per unit. Open to co-owners only.
+      The deadline to choose a date is January 15, 2026.
+    </p>
+  </div>
+
+  <script>
+    // ==== SELECTED DATES (edit this list only) ====
+    // Use format "YYYY-MM-DD"
+    const selectedDates = [
+      "2026-11-12"
+      // Add more like:
+      // "2026-06-01",
+      // "2027-02-14"
+    ];
+
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    const calendarEl = document.getElementById("calendar");
+
+    function createMonth(year, monthIndex) {
+      const monthEl = document.createElement("div");
+      monthEl.className = "month";
+
+      const headerEl = document.createElement("div");
+      headerEl.className = "month-header";
+      headerEl.textContent = monthNames[monthIndex] + " " + year;
+      monthEl.appendChild(headerEl);
+
+      const weekdaysRow = document.createElement("div");
+      weekdaysRow.className = "weekdays";
+      weekdayNames.forEach(function (wd) {
+        const wdEl = document.createElement("div");
+        wdEl.className = "weekday";
+        wdEl.textContent = wd;
+        weekdaysRow.appendChild(wdEl);
+      });
+      monthEl.appendChild(weekdaysRow);
+
+      const daysEl = document.createElement("div");
+      daysEl.className = "days";
+
+      const firstDay = new Date(year, monthIndex, 1);
+      const startWeekday = firstDay.getDay();
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+      for (let i = 0; i < startWeekday; i++) {
+        const empty = document.createElement("div");
+        empty.className = "day empty";
+        daysEl.appendChild(empty);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = formatDate(year, monthIndex + 1, day);
+        const dayEl = document.createElement("div");
+        dayEl.className = "day";
+        dayEl.textContent = String(day);
+        dayEl.dataset.date = dateStr;
+
+        if (selectedDates.indexOf(dateStr) !== -1) {
+          dayEl.classList.add("selected");
+        }
+
+        daysEl.appendChild(dayEl);
+      }
+
+      monthEl.appendChild(daysEl);
+      return monthEl;
+    }
+
+    function formatDate(year, month, day) {
+      const m = month.toString().padStart(2, "0");
+      const d = day.toString().padStart(2, "0");
+      return `${year}-${m}-${d}`;
+    }
+
+    // Render 2026
+    for (let month = 0; month < 12; month++) {
+      calendarEl.appendChild(createMonth(2026, month));
+    }
+
+    // Render Jan–Aug 2027
+    for (let month = 0; month < 8; month++) {
+      calendarEl.appendChild(createMonth(2027, month));
+    }
+  </script>
+</body>
+</html>
